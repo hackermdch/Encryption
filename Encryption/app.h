@@ -1,7 +1,9 @@
 #pragma once
-#include <d2d1.h>
 #include <Windows.h>
 #include "Timer.h"
+#include "directui.h"
+#include <set>
+#include <d3d11.h>
 
 class App {
 	friend DWORD timer(LPVOID);
@@ -11,8 +13,11 @@ public:
 	static void Finallize();
 	static App* GetInstance();
 	int Run();
-	void Resize(int width, int height);
+	void ResizeWindow(int width, int height);
+	void ResizeBuffer(int width, int height);
 	void SetLocation(int x, int y);
+	void AddElement(DirectUI* element);
+	void RemoveElement(DirectUI* element);
 private:
 	void Render();
 	void Update(float delta);
@@ -21,8 +26,13 @@ private:
 private:
 	const HWND hWnd;
 	Timer timer;
-	ID2D1Factory* factory;
-	ID2D1HwndRenderTarget* renderTarget;
+	ID3D11Device* d3d11Device;
+	IDXGISwapChain* swapChain;
+	ID2D1DeviceContext* d2dDeviceContext;
+	IDWriteFactory* dwrite;
+	ID2D1Bitmap1* renderTargetView;
 	bool closed, pause, render;
 	int width, height;
+	bool drawing;
+	std::set<DirectUI*> elements;
 };

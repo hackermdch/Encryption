@@ -1,4 +1,4 @@
-#include "Timer.h"
+#include "timer.h"
 #include <windows.h>
 
 Timer::Timer()
