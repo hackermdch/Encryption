@@ -11,8 +11,6 @@ int WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPS
 	b->background = { 1,1,0,1 };
 	b->client = RectangleF{ 500,479,120,60 };
 	App::GetInstance()->AddElement(b);
-	//App::GetInstance()->ResizeWindow(1920, 1080);
-	App::GetInstance()->ResizeBuffer(1920, 1080);
 	int ret = App::GetInstance()->Run();
 	App::Finallize();
 	return ret;

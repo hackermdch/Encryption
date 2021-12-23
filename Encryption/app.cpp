@@ -155,7 +155,6 @@ void App::Render()
 		element->Draw(r);
 	}
 	d2dDeviceContext->EndDraw();
-	d2dDeviceContext->Flush();
 	swapChain->Present(0, 0);
 	drawing = false;
 }
