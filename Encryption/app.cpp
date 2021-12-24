@@ -51,14 +51,6 @@ LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	}
-	/*case WM_SYSKEYDOWN:
-		return 0;
-	case WM_SYSKEYUP:
-		return 0;
-	case WM_KEYDOWN:
-		return 0;
-	case WM_KEYUP:
-		return 0;*/
 	}
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
@@ -132,7 +124,7 @@ App::App() :
 	IDXGIDevice* dxgi;
 	IDXGIAdapter* ad;
 	IDXGIFactory* f;
-	/*d3d11Device->QueryInterface(&dxgi);
+	d3d11Device->QueryInterface(&dxgi);
 	assert(dxgi != nullptr);
 	dxgi->GetParent(IID_PPV_ARGS(&ad));
 	ad->GetParent(IID_PPV_ARGS(&f));
@@ -140,7 +132,7 @@ App::App() :
 	f->Release();
 	ad->Release();
 	dxgi->Release();
-	surface->Release();*/
+	surface->Release();
 	DWriteCreateFactory(DWRITE_FACTORY_TYPE_ISOLATED, __uuidof(dwrite), (IUnknown**)&dwrite);
 }
 
@@ -191,6 +183,12 @@ static DWORD WINAPI timer(LPVOID lpParam)
 }
 
 bool App::PreTranslateMessage(MSG* msg) {
+	switch (msg->message)
+	{
+	case WM_SYSKEYDOWN:
+	case WM_SYSKEYUP:
+		return false;
+	}
 	return true;
 }
 
