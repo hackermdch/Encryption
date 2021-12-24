@@ -22,9 +22,8 @@ struct RectangleF {
 	RectangleF();
 	RectangleF(float x, float y, float width, float height);
 	bool Contains(int x, int y)const;
-	D2D_RECT_F GetRaw() const;
-	RectangleF ToLeftTopRightBottom() const;
-	RectangleF ToXYWidthHeight() const;
+	void ToLeftTopRightBottom(void* rect) const;
+	void ToXYWidthHeight(void* rect) const;
 };
 
 struct Message {

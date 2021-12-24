@@ -5,7 +5,7 @@
 #include <set>
 #include <d3d11.h>
 
-class App {
+class App final {
 	friend DWORD timer(LPVOID);
 public:
 	static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -21,6 +21,7 @@ public:
 private:
 	void Render();
 	void Update(float delta);
+	bool PreTranslateMessage(MSG* msg);
 	App();
 	~App();
 private:

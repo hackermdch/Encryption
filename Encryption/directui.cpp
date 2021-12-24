@@ -9,14 +9,22 @@ RectangleF::RectangleF(float x, float y, float width, float height) : x(x), y(y)
 {
 }
 
-RectangleF RectangleF::ToLeftTopRightBottom() const
+void RectangleF::ToLeftTopRightBottom(void* rect) const
 {
-	return RectangleF{ x,y,x + width,y + height };
+	auto p = (RectangleF*)rect;
+	p->left = x;
+	p->top = y;
+	p->right = x + width;
+	p->bottom = y + height;
 }
 
-RectangleF RectangleF::ToXYWidthHeight() const
+void RectangleF::ToXYWidthHeight(void* rect) const
 {
-	return RectangleF{ x,y,right - x,bottom - y };
+	auto p = (RectangleF*)rect;
+	p->x = left;
+	p->y = top;
+	p->width = right - left;
+	p->height = bottom - top;
 }
 
 bool RectangleF::Contains(int x, int y) const
@@ -27,14 +35,10 @@ bool RectangleF::Contains(int x, int y) const
 		&& y > this->y && y < b;
 }
 
-D2D_RECT_F RectangleF::GetRaw() const
-{
-	return D2D_RECT_F{ x,y,width,height };
-}
-
 void Button::Draw(const Render& render)
 {
-	auto&& f = client.ToLeftTopRightBottom().GetRaw();
+	D2D1_RECT_F f;
+	client.ToLeftTopRightBottom(&f);
 	ID2D1SolidColorBrush* brush;
 	ID2D1SolidColorBrush* black;
 	IDWriteTextFormat* format;
