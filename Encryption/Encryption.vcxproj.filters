@@ -27,9 +27,6 @@
     <ClCompile Include="directui.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="uis.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">

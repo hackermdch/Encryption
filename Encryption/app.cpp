@@ -1,6 +1,7 @@
 #include "app.h"
 #include <windowsx.h>
-#include <assert.h>
+#include <cassert>
+#include <dwrite.h>
 
 using namespace std;
 
@@ -27,9 +28,9 @@ LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_LBUTTONDOWN:
 	{
-		auto x = GET_X_LPARAM(lParam);
-		auto y = GET_Y_LPARAM(lParam);
-		for (auto element : app->elements) {
+		const auto x = GET_X_LPARAM(lParam);
+		const auto y = GET_Y_LPARAM(lParam);
+		for (const auto element : app->elements) {
 
 			if (element->client.Contains(x, y)) {
 				element->OnMsg(ProccessMessage(msg, wParam, lParam, x, y));
@@ -40,9 +41,9 @@ LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_LBUTTONUP:
 	{
-		auto x = GET_X_LPARAM(lParam);
-		auto y = GET_Y_LPARAM(lParam);
-		for (auto element : app->elements) {
+		const auto x = GET_X_LPARAM(lParam);
+		const auto y = GET_Y_LPARAM(lParam);
+		for (const auto element : app->elements) {
 
 			if (element->client.Contains(x, y)) {
 				element->OnMsg(ProccessMessage(msg, wParam, lParam, x, y));
@@ -57,7 +58,7 @@ LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 void App::Initialize()
 {
-	WNDCLASSEX wc = { 0 };
+	WNDCLASSEX wc{};
 	wc.cbSize = sizeof(wc);
 	wc.style = CS_OWNDC;
 	wc.lpfnWndProc = WndProc;
@@ -111,7 +112,7 @@ App::App() :
 	dec.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	dec.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	dec.OutputWindow = hWnd;
-	auto res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_BGRA_SUPPORT, fl, 1, D3D11_SDK_VERSION, &dec, &swapChain, &d3d11Device, nullptr, nullptr);
+	D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_BGRA_SUPPORT, fl, 1, D3D11_SDK_VERSION, &dec, &swapChain, &d3d11Device, nullptr, nullptr);
 	IDXGISurface* surface;
 	swapChain->GetBuffer(0, IID_PPV_ARGS(&surface));
 	assert(surface != nullptr);
@@ -138,7 +139,7 @@ App::App() :
 
 App::~App()
 {
-	for (auto item : elements) {
+	for (const auto item : elements) {
 		delete item;
 	}
 	d3d11Device->Release();
@@ -225,7 +226,7 @@ void App::ResizeBuffer(int width, int height) {
 	IDXGISurface* surface;
 	swapChain->GetBuffer(0, IID_PPV_ARGS(&surface));
 	assert(surface != nullptr);
-	D2D1_CREATION_PROPERTIES cp = {};
+	D2D1_CREATION_PROPERTIES cp;
 	cp.debugLevel = D2D1_DEBUG_LEVEL_NONE;
 	cp.options = D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS;
 	cp.threadingMode = D2D1_THREADING_MODE_MULTI_THREADED;

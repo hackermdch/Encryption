@@ -1,6 +1,6 @@
 #pragma once
 #include <Windows.h>
-#include "Timer.h"
+#include "timer.h"
 #include "directui.h"
 #include <set>
 #include <d3d11.h>
@@ -24,14 +24,13 @@ private:
 	bool PreTranslateMessage(MSG* msg);
 	App();
 	~App();
-private:
-	const HWND hWnd;
+	const HWND hWnd{};
 	Timer timer;
 	ID3D11Device* d3d11Device;
-	IDXGISwapChain* swapChain;
-	ID2D1DeviceContext* d2dDeviceContext;
-	IDWriteFactory* dwrite;
-	ID2D1Bitmap1* renderTargetView;
+	IDXGISwapChain* swapChain{};
+	ID2D1DeviceContext* d2dDeviceContext{};
+	IDWriteFactory* dwrite{};
+	ID2D1Bitmap1* renderTargetView{};
 	bool closed, pause, render;
 	int width, height;
 	bool drawing;

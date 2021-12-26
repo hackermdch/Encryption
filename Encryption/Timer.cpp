@@ -1,5 +1,5 @@
 #include "timer.h"
-#include <windows.h>
+#include <Windows.h>
 
 Timer::Timer()
 	: mSecondsPerCount(0.0), mDeltaTime(-1.0), mBaseTime(0),
@@ -25,7 +25,7 @@ float Timer::TotalTime()const
 
 	if (mStopped)
 	{
-		return (float)(((mStopTime - mPausedTime) - mBaseTime) * mSecondsPerCount);
+		return (float)((mStopTime - mPausedTime - mBaseTime) * mSecondsPerCount);
 	}
 
 	// The distance mCurrTime - mBaseTime includes paused time,
@@ -37,11 +37,7 @@ float Timer::TotalTime()const
 	//                     |<--paused time-->|
 	// ----*---------------*-----------------*------------*------> time
 	//  mBaseTime       mStopTime        startTime     mCurrTime
-
-	else
-	{
-		return (float)(((mCurrTime - mPausedTime) - mBaseTime) * mSecondsPerCount);
-	}
+	return (float)((mCurrTime - mPausedTime - mBaseTime) * mSecondsPerCount);
 }
 
 float Timer::DeltaTime()const

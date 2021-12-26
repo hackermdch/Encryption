@@ -1,17 +1,18 @@
 #include "uis.h"
-#include <assert.h>
+#include <cassert>
+#include <dwrite.h>
 
 RectangleF::RectangleF() : x(0), y(0), width(0), height(0)
 {
 }
 
-RectangleF::RectangleF(float x, float y, float width, float height) : x(x), y(y), width(width), height(height)
+RectangleF::RectangleF(const float x, const float y, const float width, const float height) : x(x), y(y), width(width), height(height)
 {
 }
 
 void RectangleF::ToLeftTopRightBottom(void* rect) const
 {
-	auto p = (RectangleF*)rect;
+	const auto p = static_cast<RectangleF*>(rect);
 	p->left = x;
 	p->top = y;
 	p->right = x + width;
@@ -20,7 +21,7 @@ void RectangleF::ToLeftTopRightBottom(void* rect) const
 
 void RectangleF::ToXYWidthHeight(void* rect) const
 {
-	auto p = (RectangleF*)rect;
+	const auto p = static_cast<RectangleF*>(rect);
 	p->x = left;
 	p->y = top;
 	p->width = right - left;
@@ -43,11 +44,11 @@ void Button::Draw(const Render& render)
 	IDWriteTextFormat* format; IDWriteTextLayout* layout;
 	render.dwrite->CreateTextFormat(L"", nullptr, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"zh-cn", &format);
 	assert(format != nullptr);
-	render.dwrite->CreateTextLayout(text.data(), text.length(), format, client.width, client.height, &layout);
-	DWRITE_TEXT_METRICS textMetrics;
-	layout->GetMetrics(&textMetrics);
-	DWRITE_LINE_METRICS* lm = Alloca(DWRITE_LINE_METRICS, textMetrics.lineCount);
-	layout->GetLineMetrics(lm, textMetrics.lineCount, &textMetrics.lineCount);
+	render.dwrite->CreateTextLayout(text.data(), static_cast<UINT32>(text.length()), format, client.width, client.height, &layout);
+	DWRITE_TEXT_METRICS text_metrics{};
+	layout->GetMetrics(&text_metrics);
+	auto* lm = Alloca(DWRITE_LINE_METRICS, text_metrics.lineCount);
+	layout->GetLineMetrics(lm, text_metrics.lineCount, &text_metrics.lineCount);
 	render.d2d->CreateSolidColorBrush(background, &brush);
 	render.d2d->CreateSolidColorBrush({ 0,0,0,1 }, &black);
 	assert(brush != nullptr && black != nullptr && layout != nullptr);
@@ -56,15 +57,15 @@ void Button::Draw(const Render& render)
 	format->GetFontCollection(&fc);
 	fc->GetFontFamily(0, &fm);
 	fm->GetFont(0, &font);
-	DWRITE_FONT_METRICS fontMetrics;
-	font->GetMetrics(&fontMetrics);
+	DWRITE_FONT_METRICS font_metrics{};
+	font->GetMetrics(&font_metrics);
 	font->Release();
 	fm->Release();
 	fc->Release();
-	const float line = (double)(fontMetrics.ascent - fontMetrics.descent) * fontSize / fontMetrics.designUnitsPerEm - 0.125 * fontSize;
-	float a = lm->baseline - line;
+	const float line = static_cast<float>(font_metrics.ascent - font_metrics.descent) * fontSize / static_cast<float>(font_metrics.designUnitsPerEm) - 0.125f * fontSize;
+	const float a = lm->baseline - line;
 	layout->SetMaxHeight(lm->height);
-	render.d2d->DrawTextLayout({ client.x + (client.width - textMetrics.widthIncludingTrailingWhitespace) / 2,client.y - line + (client.height - a) / 2 }, layout, black, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+	render.d2d->DrawTextLayout({ client.x + (client.width - text_metrics.widthIncludingTrailingWhitespace) / 2,client.y - line + (client.height - a) / 2 }, layout, black, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 	render.d2d->DrawRectangle(f, black);
 	layout->Release();
 	brush->Release();

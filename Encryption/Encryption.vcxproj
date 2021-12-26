@@ -151,7 +151,6 @@
     <ClCompile Include="directui.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="timer.cpp" />
-    <ClCompile Include="uis.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h" />
