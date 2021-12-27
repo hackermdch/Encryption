@@ -31,8 +31,7 @@ LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		const auto x = GET_X_LPARAM(lParam);
 		const auto y = GET_Y_LPARAM(lParam);
 		for (const auto element : app->elements) {
-
-			if (element->client.Contains(x, y)) {
+			if (element->client.Contains(app->TransformPoint(x, y))) {
 				element->OnMsg(ProccessMessage(msg, wParam, lParam, x, y));
 				break;
 			}
@@ -44,9 +43,34 @@ LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		const auto x = GET_X_LPARAM(lParam);
 		const auto y = GET_Y_LPARAM(lParam);
 		for (const auto element : app->elements) {
-
-			if (element->client.Contains(x, y)) {
+			if (element->client.Contains(app->TransformPoint(x, y))) {
 				element->OnMsg(ProccessMessage(msg, wParam, lParam, x, y));
+				break;
+			}
+		}
+		break;
+	}
+	case WM_MOUSEMOVE:
+	{
+		const auto x = GET_X_LPARAM(lParam);
+		const auto y = GET_Y_LPARAM(lParam);
+		for (const auto element : app->elements) {
+			const bool isInto = element->mouseInto;
+			if (element->client.Contains(app->TransformPoint(x, y)) && !isInto) {
+				element->mouseInto = true;
+				element->OnMsg(ProccessMessage(WM_MOUSEHOVER, wParam, lParam, x, y));
+				break;
+			}
+			if (!element->client.Contains(app->TransformPoint(x, y)) && isInto) {
+				element->mouseInto = false;
+				element->OnMsg(ProccessMessage(WM_MOUSELEAVE, wParam, lParam, x, y));
+				break;
+			}
+		}
+		for (const auto element : app->elements)
+		{
+			if (element->client.Contains(app->TransformPoint(x, y)) && element->mouseInto) {
+				element->OnMsg(ProccessMessage(WM_MOUSEMOVE, wParam, lParam, x, y));
 				break;
 			}
 		}
@@ -86,7 +110,9 @@ App* App::GetInstance()
 App::App() :
 	width(default_width),
 	height(default_height),
-	hWnd(CreateWindowExW(0, L"Encrypter", L"加密通讯", WS_SIZEBOX | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, 20, 20, default_width, default_height, nullptr, nullptr, GetModuleHandle(nullptr), nullptr)),
+	bufferWidth(default_width),
+	bufferHeight(default_height),
+	hWnd(CreateWindowExW(0, L"Encrypter", L"加密通讯", WS_OVERLAPPEDWINDOW, 20, 20, default_width, default_height, nullptr, nullptr, GetModuleHandle(nullptr), nullptr)),
 	d3d11Device(nullptr),
 	closed(false),
 	pause(false),
@@ -148,9 +174,10 @@ App::~App()
 
 void App::Render()
 {
+	static const auto color = Color(0xc7f1ffff);
 	drawing = true;
 	d2dDeviceContext->BeginDraw();
-	d2dDeviceContext->Clear({ 0,1,1,1 });
+	d2dDeviceContext->Clear(color);
 	struct Render r { d2dDeviceContext, dwrite };
 	for (auto element : elements) {
 		element->Draw(r);
@@ -183,7 +210,7 @@ static DWORD WINAPI timer(LPVOID lpParam)
 	return 0;
 }
 
-bool App::PreTranslateMessage(MSG* msg) {
+bool App::PreTranslateMessage(const MSG* msg) {
 	switch (msg->message)
 	{
 	case WM_SYSKEYDOWN:
@@ -195,7 +222,7 @@ bool App::PreTranslateMessage(MSG* msg) {
 
 int App::Run()
 {
-	CreateThread(NULL, 0, ::timer, NULL, 0, NULL);
+	CreateThread(nullptr, 0, ::timer, nullptr, 0, nullptr);
 	timer.Reset();
 	ShowWindow(hWnd, SW_SHOW);
 	MSG msg;
@@ -211,7 +238,7 @@ int App::Run()
 
 void App::ResizeWindow(int width, int height)
 {
-	SetWindowPos(hWnd, 0, 0, 0, width, height, SWP_NOMOVE);
+	SetWindowPos(hWnd, nullptr, 0, 0, width, height, SWP_NOMOVE);
 	this->width = width;
 	this->height = height;
 }
@@ -226,19 +253,21 @@ void App::ResizeBuffer(int width, int height) {
 	IDXGISurface* surface;
 	swapChain->GetBuffer(0, IID_PPV_ARGS(&surface));
 	assert(surface != nullptr);
-	D2D1_CREATION_PROPERTIES cp;
+	D2D1_CREATION_PROPERTIES cp{};
 	cp.debugLevel = D2D1_DEBUG_LEVEL_NONE;
 	cp.options = D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS;
 	cp.threadingMode = D2D1_THREADING_MODE_MULTI_THREADED;
 	D2D1CreateDeviceContext(surface, cp, &d2dDeviceContext);
 	d2dDeviceContext->GetTarget((ID2D1Image**)&renderTargetView);
 	surface->Release();
+	bufferWidth = width;
+	bufferHeight = height;
 	render = true;
 }
 
 void App::SetLocation(int x, int y)
 {
-	SetWindowPos(hWnd, 0, x, y, 0, 0, SWP_NOSIZE);
+	SetWindowPos(hWnd, nullptr, x, y, 0, 0, SWP_NOSIZE);
 }
 
 void App::AddElement(DirectUI* element)
@@ -251,4 +280,13 @@ void App::RemoveElement(DirectUI* element)
 	if (elements.contains(element)) {
 		elements.erase(element);
 	}
+}
+
+POINT App::TransformPoint(int x, int y)
+{
+	RECT client;
+	GetClientRect(hWnd, &client);
+	float sw = (float)bufferWidth / (client.right - client.left);
+	float sh = (float)bufferHeight / (client.bottom - client.top);
+	return { (int)(sw * x), (int)(sh * y) };
 }

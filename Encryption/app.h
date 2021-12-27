@@ -18,12 +18,14 @@ public:
 	void SetLocation(int x, int y);
 	void AddElement(DirectUI* element);
 	void RemoveElement(DirectUI* element);
+	POINT TransformPoint(int x, int y);
 private:
 	void Render();
 	void Update(float delta);
-	bool PreTranslateMessage(MSG* msg);
+	bool PreTranslateMessage(const MSG* msg);
 	App();
 	~App();
+private:
 	const HWND hWnd{};
 	Timer timer;
 	ID3D11Device* d3d11Device;
@@ -33,6 +35,7 @@ private:
 	ID2D1Bitmap1* renderTargetView{};
 	bool closed, pause, render;
 	int width, height;
+	int bufferWidth, bufferHeight;
 	bool drawing;
 	std::set<DirectUI*> elements;
 };

@@ -20,7 +20,8 @@ struct RectangleF {
 	};
 	RectangleF();
 	RectangleF(float x, float y, float width, float height);
-	[[nodiscard]] bool Contains(int x, int y)const;
+	[[nodiscard]] bool Contains(int x, int y) const;
+	[[nodiscard]] bool Contains(POINT point) const;
 	void ToLeftTopRightBottom(void* rect) const;
 	void ToXYWidthHeight(void* rect) const;
 };
@@ -38,12 +39,14 @@ struct Render {
 	IDWriteFactory* dwrite;
 };
 
-class DirectUI 
+class DirectUI
 {
 	friend class App;
 protected:
 	virtual void Draw(const Render& render) = 0;
 	virtual void OnMsg(Message msg) = 0;
+protected:
+	bool mouseInto = false;
 public:
 	virtual ~DirectUI() = default;
 	RectangleF client;

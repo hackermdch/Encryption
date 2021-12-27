@@ -7,9 +7,13 @@ protected:
 	void Draw(const Render& render) override;
 	void OnMsg(Message msg) override;
 public:
-	D2D_COLOR_F background = {};
-	D2D_COLOR_F hover = {};
-	D2D_COLOR_F click = {};
+	Button();
+public:
+	D2D_COLOR_F background;
+	D2D_COLOR_F hover_color;
+	D2D_COLOR_F click_color;
 	std::wstring text;
-	float fontSize = 30;
+	float fontSize;
+private:
+	bool mouse_down;
 };

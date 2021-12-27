@@ -36,6 +36,14 @@ bool RectangleF::Contains(int x, int y) const
 		&& y > this->y && y < b;
 }
 
+bool RectangleF::Contains(POINT point) const
+{
+	const auto r = this->x + width;
+	const auto b = this->y + height;
+	return point.x > this->x && point.x < r
+		&& point.y > this->y && point.y < b;
+}
+
 void Button::Draw(const Render& render)
 {
 	D2D1_RECT_F f;
@@ -49,10 +57,19 @@ void Button::Draw(const Render& render)
 	layout->GetMetrics(&text_metrics);
 	auto* lm = Alloca(DWRITE_LINE_METRICS, text_metrics.lineCount);
 	layout->GetLineMetrics(lm, text_metrics.lineCount, &text_metrics.lineCount);
+	if (mouse_down) {
+		render.d2d->CreateSolidColorBrush(click_color, &brush);
+		goto L1;
+	}
+	if (mouseInto)
+	{
+		render.d2d->CreateSolidColorBrush(hover_color, &brush);
+		goto L1;
+	}
 	render.d2d->CreateSolidColorBrush(background, &brush);
+L1:
 	render.d2d->CreateSolidColorBrush({ 0,0,0,1 }, &black);
 	assert(brush != nullptr && black != nullptr && layout != nullptr);
-	render.d2d->FillRectangle(f, brush);
 	IDWriteFontCollection* fc;	IDWriteFontFamily* fm;	IDWriteFont* font;
 	format->GetFontCollection(&fc);
 	fc->GetFontFamily(0, &fm);
@@ -65,6 +82,7 @@ void Button::Draw(const Render& render)
 	const float line = static_cast<float>(font_metrics.ascent - font_metrics.descent) * fontSize / static_cast<float>(font_metrics.designUnitsPerEm) - 0.125f * fontSize;
 	const float a = lm->baseline - line;
 	layout->SetMaxHeight(lm->height);
+	render.d2d->FillRectangle(f, brush);
 	render.d2d->DrawTextLayout({ client.x + (client.width - text_metrics.widthIncludingTrailingWhitespace) / 2,client.y - line + (client.height - a) / 2 }, layout, black, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 	render.d2d->DrawRectangle(f, black);
 	layout->Release();
@@ -74,5 +92,18 @@ void Button::Draw(const Render& render)
 }
 
 void Button::OnMsg(Message msg)
+{
+	switch (msg.message)
+	{
+	case WM_LBUTTONDOWN:
+		mouse_down = true;
+		break;
+	case WM_LBUTTONUP:
+		mouse_down = false;
+		break;
+	}
+}
+
+Button::Button() : fontSize(30), background(Color(0xf9d580ff)), hover_color(Color(0x80c9f9ff)), click_color(Color(0x8cf980ff)), mouse_down(false)
 {
 }
