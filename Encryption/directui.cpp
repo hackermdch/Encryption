@@ -2,6 +2,8 @@
 #include <cassert>
 #include <dwrite.h>
 
+constexpr static D2D1_COLOR_F BLACK = { 0,0,0,1 };
+
 RectangleF::RectangleF() : x(0), y(0), width(0), height(0)
 {
 }
@@ -36,7 +38,7 @@ bool RectangleF::Contains(int x, int y) const
 		&& y > this->y && y < b;
 }
 
-bool RectangleF::Contains(POINT point) const
+bool RectangleF::Contains(const POINT& point) const
 {
 	const auto r = this->x + width;
 	const auto b = this->y + height;
@@ -68,7 +70,7 @@ void Button::Draw(const Render& render)
 	}
 	render.d2d->CreateSolidColorBrush(background, &brush);
 L1:
-	render.d2d->CreateSolidColorBrush({ 0,0,0,1 }, &black);
+	render.d2d->CreateSolidColorBrush(BLACK, &black);
 	assert(brush != nullptr && black != nullptr && layout != nullptr);
 	IDWriteFontCollection* fc;	IDWriteFontFamily* fm;	IDWriteFont* font;
 	format->GetFontCollection(&fc);
@@ -91,7 +93,7 @@ L1:
 	format->Release();
 }
 
-void Button::OnMsg(Message msg)
+void Button::OnMsg(const Message& msg)
 {
 	switch (msg.message)
 	{
@@ -104,6 +106,26 @@ void Button::OnMsg(Message msg)
 	}
 }
 
-Button::Button() : fontSize(30), background(Color(0xf9d580ff)), hover_color(Color(0x80c9f9ff)), click_color(Color(0x8cf980ff)), mouse_down(false)
+Button::Button() : fontSize(30), background(Color(0xf9d580ff)), hover_color(Color(0x80c9f9ff)), click_color(Color(0x8cf980ff)), mouse_down(false), click(nullptr)
+{
+}
+
+TextBox::TextBox() : fontSize(30), background(Color(0x8dffffff))
+{
+}
+
+void TextBox::Draw(const Render& render)
+{
+	D2D1_RECT_F rect;
+	client.ToLeftTopRightBottom(&rect);
+	ID2D1SolidColorBrush* bg, * black;
+	render.d2d->CreateSolidColorBrush(background, &bg);
+	render.d2d->CreateSolidColorBrush(BLACK, &black);
+	render.d2d->FillRectangle(rect, bg);
+	render.d2d->DrawRectangle(rect, black);
+	bg->Release();
+}
+
+void TextBox::OnMsg(const Message& msg)
 {
 }

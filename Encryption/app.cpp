@@ -272,14 +272,12 @@ void App::SetLocation(int x, int y)
 
 void App::AddElement(DirectUI* element)
 {
-	elements.insert(element);
+	elements.push_back(element);
 }
 
 void App::RemoveElement(DirectUI* element)
 {
-	if (elements.contains(element)) {
-		elements.erase(element);
-	}
+	erase_if(elements, [element](DirectUI* item)->bool { return item == element; });
 }
 
 POINT App::TransformPoint(int x, int y)

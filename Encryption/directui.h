@@ -21,7 +21,7 @@ struct RectangleF {
 	RectangleF();
 	RectangleF(float x, float y, float width, float height);
 	[[nodiscard]] bool Contains(int x, int y) const;
-	[[nodiscard]] bool Contains(POINT point) const;
+	[[nodiscard]] bool Contains(const POINT& point) const;
 	void ToLeftTopRightBottom(void* rect) const;
 	void ToXYWidthHeight(void* rect) const;
 };
@@ -44,7 +44,7 @@ class DirectUI
 	friend class App;
 protected:
 	virtual void Draw(const Render& render) = 0;
-	virtual void OnMsg(Message msg) = 0;
+	virtual void OnMsg(const Message& msg) = 0;
 protected:
 	bool mouseInto = false;
 public:
@@ -54,3 +54,4 @@ public:
 	bool enable = true;
 };
 
+typedef void(*Event)(DirectUI* sender, const Message& msg);

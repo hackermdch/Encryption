@@ -2,7 +2,7 @@
 #include <Windows.h>
 #include "timer.h"
 #include "directui.h"
-#include <set>
+#include <vector>
 #include <d3d11.h>
 
 class App final {
@@ -37,5 +37,5 @@ private:
 	int width, height;
 	int bufferWidth, bufferHeight;
 	bool drawing;
-	std::set<DirectUI*> elements;
+	std::vector<DirectUI*> elements;
 };
