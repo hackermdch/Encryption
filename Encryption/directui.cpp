@@ -110,7 +110,7 @@ Button::Button() : fontSize(30), background(Color(0xf9d580ff)), hover_color(Colo
 {
 }
 
-TextBox::TextBox() : fontSize(30), background(Color(0x8dffffff))
+TextBox::TextBox() : fontSize(30), background(Color(0x8dffffff)), readonly(false)
 {
 }
 
@@ -127,5 +127,25 @@ void TextBox::Draw(const Render& render)
 }
 
 void TextBox::OnMsg(const Message& msg)
+{
+}
+
+Label::Label() : fontSize(24), color(BLACK)
+{
+}
+
+void Label::Draw(const Render& render)
+{
+	D2D1_RECT_F rect;
+	client.ToLeftTopRightBottom(&rect);
+	ID2D1SolidColorBrush* brush;
+	IDWriteTextFormat* format;
+	render.dwrite->CreateTextFormat(L"", nullptr, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"zh-cn", &format);
+	render.d2d->CreateSolidColorBrush(color, &brush);
+	render.d2d->DrawTextW(text.data(), (UINT32)text.length(), format, rect, brush);
+	brush->Release();
+}
+
+void Label::OnMsg(const Message& msg)
 {
 }

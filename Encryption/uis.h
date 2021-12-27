@@ -2,7 +2,8 @@
 #include "directui.h"
 #include <string>
 
-class Button : public DirectUI {
+class Button : public DirectUI
+{
 protected:
 	void Draw(const Render& render) override;
 	void OnMsg(const Message& msg) override;
@@ -19,7 +20,8 @@ private:
 	bool mouse_down;
 };
 
-class TextBox : public DirectUI {
+class TextBox : public DirectUI
+{
 protected:
 	void Draw(const Render& render) override;
 	void OnMsg(const Message& msg) override;
@@ -28,4 +30,18 @@ public:
 public:
 	D2D_COLOR_F background;
 	float fontSize;
+	bool readonly;
+};
+
+class Label : public DirectUI
+{
+protected:
+	void Draw(const Render& render) override;
+	void OnMsg(const Message& msg) override;
+public:
+	Label();
+public:
+	D2D1_COLOR_F color;
+	float fontSize;
+	std::wstring text;
 };
