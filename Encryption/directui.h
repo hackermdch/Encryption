@@ -1,5 +1,6 @@
 #pragma once
 #include <d2d1_2.h>
+#include <functional>
 
 struct RectangleF {
 	union
@@ -54,4 +55,4 @@ public:
 	bool enable = true;
 };
 
-typedef void(*Event)(DirectUI* sender, const Message& msg);
+typedef std::function<void(DirectUI* sender, const Message& msg)> Event;

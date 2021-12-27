@@ -21,8 +21,6 @@ int WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPS
 	App::GetInstance()->AddElement(b);
 	App::GetInstance()->AddElement(b1);
 	App::GetInstance()->AddElement(b2);
-	App::GetInstance()->RemoveElement(b1);
-	App::GetInstance()->RemoveElement(b1);
 	int ret = App::GetInstance()->Run();
 	App::Finallize();
 	return ret;
