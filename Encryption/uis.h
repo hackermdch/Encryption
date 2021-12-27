@@ -9,6 +9,7 @@ protected:
 	void OnMsg(const Message& msg) override;
 public:
 	Button();
+	const type_info& GetType() override;
 public:
 	D2D_COLOR_F background;
 	D2D_COLOR_F hover_color;
@@ -25,12 +26,17 @@ class TextBox : public DirectUI
 protected:
 	void Draw(const Render& render) override;
 	void OnMsg(const Message& msg) override;
+	void Update(float) override;
 public:
 	TextBox();
+	const type_info& GetType() override;
 public:
 	D2D_COLOR_F background;
 	float fontSize;
 	bool readonly;
+private:
+	int timer;
+	bool cursor;
 };
 
 class Label : public DirectUI
@@ -40,6 +46,7 @@ protected:
 	void OnMsg(const Message& msg) override;
 public:
 	Label();
+	const type_info& GetType() override;
 public:
 	D2D1_COLOR_F color;
 	float fontSize;

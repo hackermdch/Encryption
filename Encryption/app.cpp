@@ -32,6 +32,15 @@ LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		const auto y = GET_Y_LPARAM(lParam);
 		for (const auto element : app->elements) {
 			if (element->client.Contains(app->TransformPoint(x, y))) {
+				if (element->focusAble)
+				{
+					element->focus = true;
+					if (app->focus != nullptr)
+					{
+						app->focus->focus = false;
+					}
+					app->focus = element;
+				}
 				element->OnMsg(ProccessMessage(msg, wParam, lParam, x, y));
 				break;
 			}
@@ -117,7 +126,8 @@ App::App() :
 	closed(false),
 	pause(false),
 	render(true),
-	drawing(false)
+	drawing(false),
+	focus(nullptr)
 {
 	D3D_FEATURE_LEVEL fl[]{ D3D_FEATURE_LEVEL_11_1 };
 	DXGI_SWAP_CHAIN_DESC dec = {};
@@ -189,6 +199,10 @@ void App::Render()
 
 void App::Update(float delta)
 {
+	for (auto e : elements)
+	{
+		e->Update(delta);
+	}
 }
 
 static DWORD WINAPI timer(LPVOID lpParam)

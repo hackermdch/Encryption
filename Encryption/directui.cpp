@@ -30,6 +30,10 @@ void RectangleF::ToXYWidthHeight(void* rect) const
 	p->height = bottom - top;
 }
 
+void DirectUI::Update(float delta)
+{
+}
+
 bool RectangleF::Contains(int x, int y) const
 {
 	const auto r = this->x + width;
@@ -110,18 +114,34 @@ Button::Button() : fontSize(30), background(Color(0xf9d580ff)), hover_color(Colo
 {
 }
 
-TextBox::TextBox() : fontSize(30), background(Color(0x8dffffff)), readonly(false)
+const type_info& Button::GetType()
 {
+	return typeid(Button);
+}
+
+TextBox::TextBox() : fontSize(30), background(Color(0x8dffffff)), readonly(false), timer(0), cursor(false)
+{
+	auto p = const_cast<bool*>(&focusAble);
+	*p = true;
+}
+
+const type_info& TextBox::GetType()
+{
+	return typeid(TextBox);
 }
 
 void TextBox::Draw(const Render& render)
 {
+	static const auto db = Color(0x00197cff);
 	D2D1_RECT_F rect;
 	client.ToLeftTopRightBottom(&rect);
-	ID2D1SolidColorBrush* bg, * black;
+	ID2D1SolidColorBrush* bg, * black, * darkblue;
 	render.d2d->CreateSolidColorBrush(background, &bg);
 	render.d2d->CreateSolidColorBrush(BLACK, &black);
+	render.d2d->CreateSolidColorBrush(db, &darkblue);
 	render.d2d->FillRectangle(rect, bg);
+	if (focus && cursor)
+		render.d2d->DrawLine({ client.x + 10,client.y }, { client.x + 10,client.y + fontSize }, darkblue);
 	render.d2d->DrawRectangle(rect, black);
 	bg->Release();
 }
@@ -130,8 +150,24 @@ void TextBox::OnMsg(const Message& msg)
 {
 }
 
+void TextBox::Update(float delta)
+{
+	static constexpr int degree = 100000;
+	timer += static_cast<int>(delta * degree);
+	if (timer >= degree / 2)
+	{
+		timer = 0;
+		cursor = !cursor;
+	}
+}
+
 Label::Label() : fontSize(24), color(BLACK)
 {
+}
+
+const type_info& Label::GetType()
+{
+	return typeid(Label);
 }
 
 void Label::Draw(const Render& render)

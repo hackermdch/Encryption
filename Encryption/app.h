@@ -38,4 +38,5 @@ private:
 	int bufferWidth, bufferHeight;
 	bool drawing;
 	std::vector<DirectUI*> elements;
+	DirectUI* focus;
 };

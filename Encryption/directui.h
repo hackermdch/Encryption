@@ -46,8 +46,13 @@ class DirectUI
 protected:
 	virtual void Draw(const Render& render) = 0;
 	virtual void OnMsg(const Message& msg) = 0;
+	virtual void Update(float);
+public:
+	virtual const type_info& GetType() = 0;
 protected:
 	bool mouseInto = false;
+	bool focus = false;
+	const bool focusAble = false;
 public:
 	virtual ~DirectUI() = default;
 	RectangleF client;
