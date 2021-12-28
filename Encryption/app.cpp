@@ -2,10 +2,13 @@
 #include <windowsx.h>
 #include <cassert>
 #include <dwrite.h>
+#include <ShellScalingApi.h>
 
 using namespace std;
 
 static App* app;
+static bool initialized = false;
+static bool finallized = false;
 constexpr int default_width = 960, default_height = 540;
 
 __forceinline static Message ProccessMessage(UINT msg, WPARAM wParam, LPARAM lParam, int x, int y) {
@@ -109,24 +112,31 @@ LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 void App::Initialize()
 {
-	WNDCLASSEX wc{};
-	wc.cbSize = sizeof(wc);
-	wc.style = CS_OWNDC;
-	wc.lpfnWndProc = WndProc;
-	wc.hInstance = GetModuleHandle(nullptr);
-	wc.lpszClassName = L"Encrypter";
-	wc.hbrBackground = nullptr;
-	wc.hCursor = nullptr;
-	wc.hIcon = nullptr;
-	wc.hIconSm = nullptr;
-	wc.lpszMenuName = nullptr;
-	RegisterClassEx(&wc);
-	app = new App();
+	if (!initialized) {
+		SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+		WNDCLASSEX wc{};
+		wc.cbSize = sizeof(wc);
+		wc.style = CS_OWNDC;
+		wc.lpfnWndProc = WndProc;
+		wc.hInstance = GetModuleHandle(nullptr);
+		wc.lpszClassName = L"Encrypter";
+		wc.hbrBackground = nullptr;
+		wc.hCursor = nullptr;
+		wc.hIcon = nullptr;
+		wc.hIconSm = nullptr;
+		wc.lpszMenuName = nullptr;
+		RegisterClassEx(&wc);
+		app = new App();
+		initialized = true;
+	}
 }
 
 void App::Finallize()
 {
-	delete app;
+	if (initialized && !finallized) {
+		delete app;
+		finallized = true;
+	}
 }
 
 App* App::GetInstance()
@@ -198,8 +208,11 @@ App::~App()
 	for (const auto item : elements) {
 		delete item;
 	}
-	d3d11Device->Release();
+	renderTargetView->Release();
 	d2dDeviceContext->Release();
+	dwrite->Release();
+	swapChain->Release();
+	d3d11Device->Release();
 }
 
 void App::Render()

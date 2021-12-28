@@ -2,7 +2,6 @@
 #include <cassert>
 #include <dwrite.h>
 #include <sstream>
-
 #include "app.h"
 
 using namespace std;
@@ -219,16 +218,88 @@ void TextBox::OnMsg(const Message& msg)
 		break;
 	case WM_IME_CHAR:
 	case WM_CHAR:
+	{
+		cursor = true;
+		timer = 0;
 		wchar_t c = (wchar_t)msg.wParam;
+		if (c == L'\b') {
+			if (col == 0 && row - 1 >= 0) {
+				content.erase(content.begin() + row);
+				row--;
+				col = content[row].size() - 1;
+			}
+			if (col - 1 >= 0) {
+				content[row].erase(content[row].begin() + col - 1);
+				col--;
+			}
+			break;
+		}
 		content[row].insert(content[row].begin() + col, c);
 		col++;
-		if (c == '\r')
+		if (c == L'\r')
 		{
 			content.emplace(content.begin() + row + 1);
 			row++;
 			col = 0;
 		}
 		break;
+	}
+	case WM_KEYDOWN: {
+		switch (msg.wParam)
+		{
+		case VK_LEFT:
+			cursor = true;
+			timer = 0;
+			if (col == 0 && row - 1 >= 0) {
+				row--;
+				col = content[row].size();
+			}
+			if (col - 1 >= 0) {
+				col--;
+			}
+			break;
+		case VK_RIGHT:
+			cursor = true;
+			timer = 0;
+			if (col < content[row].size()) {
+				col++;
+				if (content[row][col - 1] == L'\r')
+				{
+					if (row + 1 < content.size()) {
+						row++;
+						col = 0;
+					}
+				}
+			}
+			break;
+		case 0x56:
+			if (GetKeyState(VK_CONTROL) & 0x8000)
+			{
+				if (OpenClipboard(nullptr) && IsClipboardFormatAvailable(CF_TEXT))
+				{
+					auto data = (const wchar_t*)GetClipboardData(CF_UNICODETEXT);
+					for (int i = 0;; i++) {
+						wchar_t c = data[i];
+						if (c == 0)break;
+						if (c == L'\r')continue;
+						if (c == L'\n')
+						{
+							content[row].insert(content[row].begin() + col, L'\r');
+							col++;
+							content.emplace(content.begin() + row + 1);
+							row++;
+							col = 0;
+							continue;
+						}
+						content[row].insert(content[row].begin() + col, c);
+						col++;
+					}
+				}
+			}
+			break;
+		}
+		break;
+	}
 	}
 }
 
@@ -287,6 +358,7 @@ void Label::Draw(const Render& render)
 	render.d2d->CreateSolidColorBrush(color, &brush);
 	render.d2d->DrawTextW(text.data(), (UINT32)text.length(), format, rect, brush);
 	brush->Release();
+	format->Release();
 }
 
 void Label::OnMsg(const Message& msg)
