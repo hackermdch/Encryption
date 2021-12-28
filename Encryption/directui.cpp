@@ -1,6 +1,11 @@
 #include "uis.h"
 #include <cassert>
 #include <dwrite.h>
+#include <sstream>
+
+#include "app.h"
+
+using namespace std;
 
 constexpr static D2D1_COLOR_F BLACK = { 0,0,0,1 };
 
@@ -119,15 +124,36 @@ const type_info& Button::GetType()
 	return typeid(Button);
 }
 
-TextBox::TextBox() : fontSize(30), background(Color(0x8dffffff)), readonly(false), timer(0), cursor(false)
+TextBox::TextBox() : fontSize(24), background(Color(0x8dffffff)), readonly(false), timer(0), cursor(false)
 {
 	auto p = const_cast<bool*>(&focusAble);
 	*p = true;
+	content.emplace_back();
 }
 
 const type_info& TextBox::GetType()
 {
 	return typeid(TextBox);
+}
+
+wstring TextBox::GetText()
+{
+	wstringstream os;
+	for (auto& row : content)
+	{
+		for (auto c : row)
+		{
+			os.write(&c, 1);
+		}
+	}
+	return os.str();
+}
+
+void TextBox::RenderText(const Render& render)
+{
+	D2D1_RECT_F rect;
+	client.ToLeftTopRightBottom(&rect);
+	rect.left += 5;
 }
 
 void TextBox::Draw(const Render& render)
@@ -136,10 +162,13 @@ void TextBox::Draw(const Render& render)
 	D2D1_RECT_F rect;
 	client.ToLeftTopRightBottom(&rect);
 	ID2D1SolidColorBrush* bg, * black, * darkblue;
+	IDWriteTextFormat* format;
+	render.dwrite->CreateTextFormat(L"", nullptr, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"zh-cn", &format);
 	render.d2d->CreateSolidColorBrush(background, &bg);
 	render.d2d->CreateSolidColorBrush(BLACK, &black);
 	render.d2d->CreateSolidColorBrush(db, &darkblue);
 	render.d2d->FillRectangle(rect, bg);
+	RenderText(render);
 	if (focus && cursor)
 		render.d2d->DrawLine({ client.x + 10,client.y }, { client.x + 10,client.y + fontSize }, darkblue);
 	render.d2d->DrawRectangle(rect, black);
@@ -148,6 +177,23 @@ void TextBox::Draw(const Render& render)
 
 void TextBox::OnMsg(const Message& msg)
 {
+	switch (msg.message)
+	{
+	case FOCUS_EVENT:
+		if (msg.wParam == true) {
+			COMPOSITIONFORM cp{};
+			cp.dwStyle = CFS_FORCE_POSITION;
+			cp.ptCurrentPos = POINT(client.x, client.y - 40);
+			ImmAssociateContext(App::GetInstance()->hWnd, App::GetInstance()->hImc);
+			ImmSetCompositionWindow(App::GetInstance()->hImc, &cp);
+		}
+		break;
+	case WM_IME_CHAR:
+	case WM_CHAR:
+		wchar_t c = (wchar_t)msg.wParam;
+		content[0].push_back(c);
+		break;
+	}
 }
 
 void TextBox::Update(float delta)

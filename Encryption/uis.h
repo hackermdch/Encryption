@@ -23,6 +23,8 @@ private:
 
 class TextBox : public DirectUI
 {
+private:
+	void RenderText(const Render& render);
 protected:
 	void Draw(const Render& render) override;
 	void OnMsg(const Message& msg) override;
@@ -30,6 +32,7 @@ protected:
 public:
 	TextBox();
 	const type_info& GetType() override;
+	std::wstring GetText();
 public:
 	D2D_COLOR_F background;
 	float fontSize;
@@ -37,6 +40,7 @@ public:
 private:
 	int timer;
 	bool cursor;
+	std::vector<std::vector<wchar_t>> content;
 };
 
 class Label : public DirectUI

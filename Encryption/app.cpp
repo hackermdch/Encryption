@@ -22,24 +22,42 @@ LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
+	case WM_IME_CHAR:
+	case WM_CHAR:
+		if (app->focus != nullptr)
+		{
+			app->focus->OnMsg(ProccessMessage(msg, wParam, lParam, 0, 0));
+			return 0;
+		}
+		break;
+	case WM_KEYDOWN:
+		if (app->focus != nullptr)
+		{
+			app->focus->OnMsg(ProccessMessage(msg, wParam, lParam, 0, 0));
+		}
+		break;
 	case WM_CLOSE:
 		app->render = false;
 		app->closed = true;
+		PostQuitMessage(0);
 		break;
 	case WM_LBUTTONDOWN:
 	{
 		const auto x = GET_X_LPARAM(lParam);
 		const auto y = GET_Y_LPARAM(lParam);
+		if (app->focus != nullptr)
+		{
+			app->focus->focus = false;
+			app->focus->OnMsg(ProccessMessage(FOCUS_EVENT, false, 0, 0, 0));
+			ImmAssociateContext(app->hWnd, nullptr);
+		}
 		for (const auto element : app->elements) {
 			if (element->client.Contains(app->TransformPoint(x, y))) {
 				if (element->focusAble)
 				{
 					element->focus = true;
-					if (app->focus != nullptr)
-					{
-						app->focus->focus = false;
-					}
 					app->focus = element;
+					element->OnMsg(ProccessMessage(FOCUS_EVENT, true, 0, 0, 0));
 				}
 				element->OnMsg(ProccessMessage(msg, wParam, lParam, x, y));
 				break;
@@ -129,6 +147,7 @@ App::App() :
 	drawing(false),
 	focus(nullptr)
 {
+	hImc = ImmGetContext(hWnd);
 	D3D_FEATURE_LEVEL fl[]{ D3D_FEATURE_LEVEL_11_1 };
 	DXGI_SWAP_CHAIN_DESC dec = {};
 	DXGI_MODE_DESC mode = {};
@@ -240,7 +259,7 @@ int App::Run()
 	timer.Reset();
 	ShowWindow(hWnd, SW_SHOW);
 	MSG msg;
-	while (GetMessage(&msg, hWnd, 0, 0) > 0)
+	while (GetMessage(&msg, nullptr, 0, 0) > 0)
 	{
 		if (PreTranslateMessage(&msg)) {
 			TranslateMessage(&msg);

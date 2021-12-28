@@ -25,8 +25,10 @@ private:
 	bool PreTranslateMessage(const MSG* msg);
 	App();
 	~App();
-private:
+public:
+	HIMC hImc{};
 	const HWND hWnd{};
+private:
 	Timer timer;
 	ID3D11Device* d3d11Device;
 	IDXGISwapChain* swapChain{};
