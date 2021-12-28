@@ -148,6 +148,7 @@ App::App() :
 	focus(nullptr)
 {
 	hImc = ImmGetContext(hWnd);
+	ImmAssociateContext(hWnd, nullptr);
 	D3D_FEATURE_LEVEL fl[]{ D3D_FEATURE_LEVEL_11_1 };
 	DXGI_SWAP_CHAIN_DESC dec = {};
 	DXGI_MODE_DESC mode = {};
@@ -259,7 +260,7 @@ int App::Run()
 	timer.Reset();
 	ShowWindow(hWnd, SW_SHOW);
 	MSG msg;
-	while (GetMessage(&msg, nullptr, 0, 0) > 0)
+	while (GetMessage(&msg, nullptr, NULL, NULL))
 	{
 		if (PreTranslateMessage(&msg)) {
 			TranslateMessage(&msg);

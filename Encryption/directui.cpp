@@ -124,7 +124,7 @@ const type_info& Button::GetType()
 	return typeid(Button);
 }
 
-TextBox::TextBox() : fontSize(24), background(Color(0x8dffffff)), readonly(false), timer(0), cursor(false)
+TextBox::TextBox() : fontSize(24), background(Color(0x8dffffff)), readonly(false), timer(0), cursor(false), row(0), col(0)
 {
 	auto p = const_cast<bool*>(&focusAble);
 	*p = true;
@@ -143,36 +143,65 @@ wstring TextBox::GetText()
 	{
 		for (auto c : row)
 		{
-			os.write(&c, 1);
+			os.put(c);
 		}
 	}
 	return os.str();
 }
 
-void TextBox::RenderText(const Render& render)
+void TextBox::RenderText(const Render& render, ID2D1Brush* tcolor)
 {
+	static const auto db = Color(0x00197cff);
+	static const auto lineGoup = 5;
+	ID2D1SolidColorBrush* darkblue;
+	render.d2d->CreateSolidColorBrush(db, &darkblue);
+	IDWriteTextFormat* format;
+	render.dwrite->CreateTextFormat(L"", nullptr, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"zh-cn", &format);
 	D2D1_RECT_F rect;
 	client.ToLeftTopRightBottom(&rect);
 	rect.left += 5;
+	int r = 0;
+	for (auto& row : content)
+	{
+		wstringstream os;
+		D2D1_RECT_F rt(rect);
+		rt.top += r * (fontSize + lineGoup);
+		for (auto c : row)
+		{
+			if (c == L'\r')break;
+			os.put(c);
+		}
+		auto&& s = os.str();
+		render.d2d->DrawTextW(s.data(), s.length(), format, rt, tcolor);
+		r++;
+	}
+	if (focus && cursor) {
+		auto&& ct = InternalGetText(row, col);
+		IDWriteTextLayout* layout;
+		render.dwrite->CreateTextLayout(ct.data(), ct.length(), format, client.width, 0, &layout);
+		DWRITE_TEXT_METRICS tm;
+		layout->GetMetrics(&tm);
+		D2D_POINT_2F p1(rect.left + tm.widthIncludingTrailingWhitespace, rect.top + row * (fontSize + lineGoup));
+		D2D_POINT_2F p2(p1.x, p1.y + tm.height);
+		render.d2d->DrawLine(p1, p2, darkblue);
+		layout->Release();
+	}
+	format->Release();
+	darkblue->Release();
 }
 
 void TextBox::Draw(const Render& render)
 {
-	static const auto db = Color(0x00197cff);
 	D2D1_RECT_F rect;
 	client.ToLeftTopRightBottom(&rect);
-	ID2D1SolidColorBrush* bg, * black, * darkblue;
-	IDWriteTextFormat* format;
-	render.dwrite->CreateTextFormat(L"", nullptr, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"zh-cn", &format);
+	ID2D1SolidColorBrush* bg, * black;
 	render.d2d->CreateSolidColorBrush(background, &bg);
 	render.d2d->CreateSolidColorBrush(BLACK, &black);
-	render.d2d->CreateSolidColorBrush(db, &darkblue);
 	render.d2d->FillRectangle(rect, bg);
-	RenderText(render);
-	if (focus && cursor)
-		render.d2d->DrawLine({ client.x + 10,client.y }, { client.x + 10,client.y + fontSize }, darkblue);
+	RenderText(render, black);
 	render.d2d->DrawRectangle(rect, black);
 	bg->Release();
+	black->Release();
 }
 
 void TextBox::OnMsg(const Message& msg)
@@ -191,7 +220,14 @@ void TextBox::OnMsg(const Message& msg)
 	case WM_IME_CHAR:
 	case WM_CHAR:
 		wchar_t c = (wchar_t)msg.wParam;
-		content[0].push_back(c);
+		content[row].insert(content[row].begin() + col, c);
+		col++;
+		if (c == '\r')
+		{
+			content.emplace(content.begin() + row + 1);
+			row++;
+			col = 0;
+		}
 		break;
 	}
 }
@@ -205,6 +241,31 @@ void TextBox::Update(float delta)
 		timer = 0;
 		cursor = !cursor;
 	}
+}
+
+wstring TextBox::InternalGetText()
+{
+	wstringstream os;
+	for (auto& row : content)
+	{
+		for (auto c : row)
+		{
+			os.put(c);
+		}
+	}
+	os.put(L'\n');
+	return os.str();
+}
+
+std::wstring TextBox::InternalGetText(int row, int col)
+{
+	wstringstream os;
+	auto& r = content[row];
+	for (int i = 0; i < col; i++)
+	{
+		os.put(r[i]);
+	}
+	return os.str();
 }
 
 Label::Label() : fontSize(24), color(BLACK)
