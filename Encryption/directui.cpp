@@ -211,6 +211,27 @@ void TextBox::RenderText(const Render& render, ID2D1Brush* tcolor)
 			render.dwrite->CreateTextLayout(ct.data(), ct.length(), format, client.width, 0, &layout);
 			DWRITE_TEXT_METRICS tm;
 			layout->GetMetrics(&tm);
+			if (tm.lineCount > 1)
+			{
+				DWRITE_LINE_METRICS* lm = new DWRITE_LINE_METRICS[tm.lineCount];
+				layout->GetLineMetrics(lm, tm.lineCount, &tm.lineCount);
+				int a = 0;
+				for (int i = 0; i < tm.lineCount - 1; i++)
+				{
+					a += lm[i].length;
+				}
+				auto&& at = InternalGetText(row, a, col);
+				layout->Release();
+				render.dwrite->CreateTextLayout(at.data(), at.length(), format, client.width, 0, &layout);
+				DWRITE_TEXT_METRICS tm2;
+				layout->GetMetrics(&tm2);
+				D2D_POINT_2F p1(rect.left + tm2.widthIncludingTrailingWhitespace, rect.top + (row + tm.lineCount - 1) * (fontSize + lineGoup) + lineGoup);
+				D2D_POINT_2F p2(p1.x, p1.y + lm->height);
+				render.d2d->DrawLine(p1, p2, darkblue);
+				layout->Release();
+				delete[] lm;
+				return;
+			}
 			D2D_POINT_2F p1(rect.left + tm.widthIncludingTrailingWhitespace, rect.top + row * (fontSize + lineGoup));
 			D2D_POINT_2F p2(p1.x, p1.y + tm.height);
 			render.d2d->DrawLine(p1, p2, darkblue);
@@ -384,6 +405,20 @@ std::wstring TextBox::InternalGetText(int row, int col)
 	wstringstream os;
 	auto& r = content[row];
 	for (int i = 0; i < col; i++)
+	{
+		os.put(r[i]);
+	}
+	lock = false;
+	return os.str();
+}
+
+std::wstring TextBox::InternalGetText(int row, int start, int end)
+{
+	while (lock);
+	lock = true;
+	wstringstream os;
+	auto& r = content[row];
+	for (int i = start; i < end; i++)
 	{
 		os.put(r[i]);
 	}

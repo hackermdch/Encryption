@@ -31,6 +31,7 @@ protected:
 	void Update(float) override;
 	std::wstring InternalGetText();
 	std::wstring InternalGetText(int row, int col);
+	std::wstring InternalGetText(int row, int start, int end);
 public:
 	TextBox();
 	const type_info& GetType() override;
