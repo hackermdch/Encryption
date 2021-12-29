@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClCompile Include="app.cpp" />
     <ClCompile Include="directui.cpp" />
+    <ClCompile Include="encode.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="timer.cpp" />
   </ItemGroup>

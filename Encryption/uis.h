@@ -35,6 +35,7 @@ public:
 	TextBox();
 	const type_info& GetType() override;
 	std::wstring GetText();
+	void SetText(const std::wstring& text);
 public:
 	D2D_COLOR_F background;
 	float fontSize;
@@ -44,6 +45,7 @@ private:
 	bool cursor;
 	std::vector<std::vector<wchar_t>> content;
 	int row, col;
+	bool lock = false;
 };
 
 class Label : public DirectUI

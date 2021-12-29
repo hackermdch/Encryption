@@ -107,6 +107,7 @@ void Button::OnMsg(const Message& msg)
 	{
 	case WM_LBUTTONDOWN:
 		mouse_down = true;
+		click(this, msg);
 		break;
 	case WM_LBUTTONUP:
 		mouse_down = false;
@@ -137,6 +138,8 @@ const type_info& TextBox::GetType()
 
 wstring TextBox::GetText()
 {
+	while (lock);
+	lock = true;
 	wstringstream os;
 	for (auto& row : content)
 	{
@@ -145,7 +148,34 @@ wstring TextBox::GetText()
 			os.put(c);
 		}
 	}
+	lock = false;
 	return os.str();
+}
+
+void TextBox::SetText(const std::wstring& text)
+{
+	while (lock);
+	lock = true;
+	content.clear();
+	content.emplace_back();
+	row = col = 0;
+	for (int i = 0;; i++) {
+		wchar_t c = text[i];
+		if (c == 0)break;
+		if (c == L'\r')continue;
+		if (c == L'\n')
+		{
+			content[row].insert(content[row].begin() + col, L'\r');
+			col++;
+			content.emplace(content.begin() + row + 1);
+			row++;
+			col = 0;
+			continue;
+		}
+		content[row].insert(content[row].begin() + col, c);
+		col++;
+	}
+	lock = false;
 }
 
 void TextBox::RenderText(const Render& render, ID2D1Brush* tcolor)
@@ -159,6 +189,7 @@ void TextBox::RenderText(const Render& render, ID2D1Brush* tcolor)
 	D2D1_RECT_F rect;
 	client.ToLeftTopRightBottom(&rect);
 	rect.left += 5;
+	if (!readonly) rect.right = D3D11_FLOAT32_MAX;
 	int r = 0;
 	for (auto& row : content)
 	{
@@ -174,16 +205,21 @@ void TextBox::RenderText(const Render& render, ID2D1Brush* tcolor)
 		render.d2d->DrawTextW(s.data(), s.length(), format, rt, tcolor);
 		r++;
 	}
-	if (focus && cursor) {
-		auto&& ct = InternalGetText(row, col);
-		IDWriteTextLayout* layout;
-		render.dwrite->CreateTextLayout(ct.data(), ct.length(), format, client.width, 0, &layout);
-		DWRITE_TEXT_METRICS tm;
-		layout->GetMetrics(&tm);
-		D2D_POINT_2F p1(rect.left + tm.widthIncludingTrailingWhitespace, rect.top + row * (fontSize + lineGoup));
-		D2D_POINT_2F p2(p1.x, p1.y + tm.height);
-		render.d2d->DrawLine(p1, p2, darkblue);
-		layout->Release();
+	if (!readonly) {
+		if (focus && cursor) {
+			auto&& ct = InternalGetText(row, col);
+			IDWriteTextLayout* layout;
+			if (readonly)
+				render.dwrite->CreateTextLayout(ct.data(), ct.length(), format, client.width, 0, &layout);
+			else
+				render.dwrite->CreateTextLayout(ct.data(), ct.length(), format, D3D11_FLOAT32_MAX, 0, &layout);
+			DWRITE_TEXT_METRICS tm;
+			layout->GetMetrics(&tm);
+			D2D_POINT_2F p1(rect.left + tm.widthIncludingTrailingWhitespace, rect.top + row * (fontSize + lineGoup));
+			D2D_POINT_2F p2(p1.x, p1.y + tm.height);
+			render.d2d->DrawLine(p1, p2, darkblue);
+			layout->Release();
+		}
 	}
 	format->Release();
 	darkblue->Release();
@@ -208,7 +244,7 @@ void TextBox::OnMsg(const Message& msg)
 	switch (msg.message)
 	{
 	case FOCUS_EVENT:
-		if (msg.wParam == true) {
+		if (!readonly && msg.wParam == true) {
 			COMPOSITIONFORM cp{};
 			cp.dwStyle = CFS_FORCE_POSITION;
 			cp.ptCurrentPos = POINT(client.x, client.y - 40);
@@ -219,28 +255,34 @@ void TextBox::OnMsg(const Message& msg)
 	case WM_IME_CHAR:
 	case WM_CHAR:
 	{
-		cursor = true;
-		timer = 0;
-		wchar_t c = (wchar_t)msg.wParam;
-		if (c == L'\b') {
-			if (col == 0 && row - 1 >= 0) {
-				content.erase(content.begin() + row);
-				row--;
-				col = content[row].size() - 1;
+		if (!readonly) {
+			while (lock);
+			lock = true;
+			cursor = true;
+			timer = 0;
+			wchar_t c = (wchar_t)msg.wParam;
+			if (c == L'\b') {
+				if (col == 0 && row - 1 >= 0) {
+					content.erase(content.begin() + row);
+					row--;
+					col = content[row].size() - 1;
+				}
+				if (col - 1 >= 0) {
+					content[row].erase(content[row].begin() + col - 1);
+					col--;
+				}
+				goto L1;
 			}
-			if (col - 1 >= 0) {
-				content[row].erase(content[row].begin() + col - 1);
-				col--;
+			content[row].insert(content[row].begin() + col, c);
+			col++;
+			if (c == L'\r')
+			{
+				content.emplace(content.begin() + row + 1);
+				row++;
+				col = 0;
 			}
-			break;
-		}
-		content[row].insert(content[row].begin() + col, c);
-		col++;
-		if (c == L'\r')
-		{
-			content.emplace(content.begin() + row + 1);
-			row++;
-			col = 0;
+		L1:
+			lock = false;
 		}
 		break;
 	}
@@ -277,22 +319,27 @@ void TextBox::OnMsg(const Message& msg)
 			{
 				if (OpenClipboard(nullptr) && IsClipboardFormatAvailable(CF_TEXT))
 				{
-					auto data = (const wchar_t*)GetClipboardData(CF_UNICODETEXT);
-					for (int i = 0;; i++) {
-						wchar_t c = data[i];
-						if (c == 0)break;
-						if (c == L'\r')continue;
-						if (c == L'\n')
-						{
-							content[row].insert(content[row].begin() + col, L'\r');
+					if (!readonly) {
+						while (lock);
+						lock = true;
+						auto data = (const wchar_t*)GetClipboardData(CF_UNICODETEXT);
+						for (int i = 0;; i++) {
+							wchar_t c = data[i];
+							if (c == 0)break;
+							if (c == L'\r')continue;
+							if (c == L'\n')
+							{
+								content[row].insert(content[row].begin() + col, L'\r');
+								col++;
+								content.emplace(content.begin() + row + 1);
+								row++;
+								col = 0;
+								continue;
+							}
+							content[row].insert(content[row].begin() + col, c);
 							col++;
-							content.emplace(content.begin() + row + 1);
-							row++;
-							col = 0;
-							continue;
 						}
-						content[row].insert(content[row].begin() + col, c);
-						col++;
+						lock = false;
 					}
 				}
 			}
@@ -305,17 +352,21 @@ void TextBox::OnMsg(const Message& msg)
 
 void TextBox::Update(float delta)
 {
-	static constexpr int degree = 100000;
-	timer += static_cast<int>(delta * degree);
-	if (timer >= degree / 2)
-	{
-		timer = 0;
-		cursor = !cursor;
+	if (!readonly) {
+		static constexpr int degree = 100000;
+		timer += static_cast<int>(delta * degree);
+		if (timer >= degree / 2)
+		{
+			timer = 0;
+			cursor = !cursor;
+		}
 	}
 }
 
 wstring TextBox::InternalGetText()
 {
+	while (lock);
+	lock = true;
 	wstringstream os;
 	for (auto& row : content)
 	{
@@ -325,17 +376,21 @@ wstring TextBox::InternalGetText()
 		}
 	}
 	os.put(L'\n');
+	lock = false;
 	return os.str();
 }
 
 std::wstring TextBox::InternalGetText(int row, int col)
 {
+	while (lock);
+	lock = true;
 	wstringstream os;
 	auto& r = content[row];
 	for (int i = 0; i < col; i++)
 	{
 		os.put(r[i]);
 	}
+	lock = false;
 	return os.str();
 }
 

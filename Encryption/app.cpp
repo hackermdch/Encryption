@@ -21,10 +21,49 @@ __forceinline static Message ProccessMessage(UINT msg, WPARAM wParam, LPARAM lPa
 	return msg1;
 }
 
+int MessageBoxCentered(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType)
+{
+	static HHOOK hHookCBT;
+	hHookCBT = SetWindowsHookEx(WH_CBT,
+		[](int nCode, WPARAM wParam, LPARAM lParam) -> LRESULT
+		{
+			if (nCode == HCBT_CREATEWND)
+			{
+				if (((LPCBT_CREATEWND)lParam)->lpcs->lpszClass == (LPWSTR)(ATOM)32770)
+				{
+					RECT rcParent{};
+					GetWindowRect(((LPCBT_CREATEWND)lParam)->lpcs->hwndParent, &rcParent);
+					((LPCBT_CREATEWND)lParam)->lpcs->x = rcParent.left + ((rcParent.right -
+						rcParent.left) - ((LPCBT_CREATEWND)lParam)->lpcs->cx) / 2;
+					((LPCBT_CREATEWND)lParam)->lpcs->y = rcParent.top + ((rcParent.bottom -
+						rcParent.top) - ((LPCBT_CREATEWND)lParam)->lpcs->cy) / 2;
+				}
+			}
+			return CallNextHookEx(hHookCBT, nCode, wParam, lParam);
+		},
+		nullptr, GetCurrentThreadId());
+	int iRet = MessageBox(hWnd, lpText, lpCaption, uType);
+	UnhookWindowsHookEx(hHookCBT);
+	return iRet;
+}
+
 LRESULT WINAPI App::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
+	case WM_NOTIFY:
+	{
+		HWND X = FindWindow((LPWSTR)(ATOM)32770, nullptr);
+		if (GetParent(X) == hWnd) {
+			int Px, Py, Sx, Sy; RECT R1, R2;
+			GetWindowRect(hWnd, &R1); GetWindowRect(X, &R2);
+			Sx = R2.right - R2.left, Px = R1.left + (R1.right - R1.left) / 2 - Sx / 2;
+			Sy = R2.bottom - R2.top, Py = R1.top + (R1.bottom - R1.top) / 2 - Sy / 2;
+			MoveWindow(X, Px, Py, Sx, Sy, 1);
+		}
+
+		break;
+	}
 	case WM_IME_CHAR:
 	case WM_CHAR:
 		if (app->focus != nullptr)

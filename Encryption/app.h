@@ -5,6 +5,8 @@
 #include <vector>
 #include <d3d11.h>
 
+int MessageBoxCentered(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);
+
 class App final {
 	friend DWORD timer(LPVOID);
 public:
