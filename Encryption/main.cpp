@@ -28,7 +28,7 @@ int WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPS
 	Label* l2 = new Label();
 	l2->text = L"输出:";
 	l2->client = { 510,15,120,60 };
-	b->click = [t, t2](DirectUI* sender, const Message& msg)->void
+	b->click = [t, t2](DirectUI*, const Message&)->void
 	{
 		try {
 			t2->SetText(encode(t->GetText()));
@@ -42,7 +42,7 @@ int WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPS
 			MessageBoxCentered(App::GetInstance()->hWnd, L"未知错误", L"出错啦", MB_ICONERROR | MB_OK);
 		}
 	};
-	b2->click = [t, t2](DirectUI* sender, const Message& msg)->void
+	b2->click = [t, t2](DirectUI*, const Message&)->void
 	{
 		try {
 			t2->SetText(decode(t->GetText()));
@@ -55,6 +55,22 @@ int WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPS
 		{
 			MessageBoxCentered(App::GetInstance()->hWnd, L"未知错误", L"出错啦", MB_ICONERROR | MB_OK);
 		}
+	};
+	b1->click = [t2](DirectUI*, const Message&)->void
+	{
+		if (OpenClipboard(nullptr)) {
+			auto&& a = t2->GetText();
+			HANDLE h = GlobalAlloc(GMEM_MOVEABLE, (a.length() + 1) * sizeof(wchar_t));
+			h = GlobalLock(h);
+			memset(h, 0, (a.length() + 1) * sizeof(wchar_t));
+			memcpy(h, a.data(), a.length() * sizeof(wchar_t));
+			GlobalUnlock(h);
+			SetClipboardData(CF_UNICODETEXT, h);
+			CloseClipboard();
+			MessageBoxCentered(App::GetInstance()->hWnd, L"已复制", L"提示", MB_ICONINFORMATION | MB_OK);
+			return;
+		}
+		MessageBoxCentered(App::GetInstance()->hWnd, L"无法打开剪贴板，请重试", L"错误", MB_ICONWARNING | MB_OK);
 	};
 	App::GetInstance()->AddElement(t2);
 	App::GetInstance()->AddElement(t);

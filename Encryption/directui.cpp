@@ -189,7 +189,6 @@ void TextBox::RenderText(const Render& render, ID2D1Brush* tcolor)
 	D2D1_RECT_F rect;
 	client.ToLeftTopRightBottom(&rect);
 	rect.left += 5;
-	if (!readonly) rect.right = D3D11_FLOAT32_MAX;
 	int r = 0;
 	for (auto& row : content)
 	{
@@ -209,10 +208,7 @@ void TextBox::RenderText(const Render& render, ID2D1Brush* tcolor)
 		if (focus && cursor) {
 			auto&& ct = InternalGetText(row, col);
 			IDWriteTextLayout* layout;
-			if (readonly)
-				render.dwrite->CreateTextLayout(ct.data(), ct.length(), format, client.width, 0, &layout);
-			else
-				render.dwrite->CreateTextLayout(ct.data(), ct.length(), format, D3D11_FLOAT32_MAX, 0, &layout);
+			render.dwrite->CreateTextLayout(ct.data(), ct.length(), format, client.width, 0, &layout);
 			DWRITE_TEXT_METRICS tm;
 			layout->GetMetrics(&tm);
 			D2D_POINT_2F p1(rect.left + tm.widthIncludingTrailingWhitespace, rect.top + row * (fontSize + lineGoup));
@@ -317,9 +313,9 @@ void TextBox::OnMsg(const Message& msg)
 		case 0x56:
 			if (GetKeyState(VK_CONTROL) & 0x8000)
 			{
-				if (OpenClipboard(nullptr) && IsClipboardFormatAvailable(CF_TEXT))
+				if (OpenClipboard(nullptr))
 				{
-					if (!readonly) {
+					if (!readonly && IsClipboardFormatAvailable(CF_TEXT)) {
 						while (lock);
 						lock = true;
 						auto data = (const wchar_t*)GetClipboardData(CF_UNICODETEXT);
@@ -341,6 +337,7 @@ void TextBox::OnMsg(const Message& msg)
 						}
 						lock = false;
 					}
+					CloseClipboard();
 				}
 			}
 			break;
