@@ -107,10 +107,10 @@ void Button::OnMsg(const Message& msg)
 	{
 	case WM_LBUTTONDOWN:
 		mouse_down = true;
-		click(this, msg);
 		break;
 	case WM_LBUTTONUP:
 		mouse_down = false;
+		click(this, msg);
 		break;
 	}
 }
